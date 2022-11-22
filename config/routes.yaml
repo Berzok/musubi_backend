@@ -1,0 +1,13 @@
+#controllers:
+#    resource: ../src/Controller/
+#    type: attribute
+index:
+    prefix: "/"
+    type: annotation
+    resource: "../src/Controller/"
+api:
+    prefix: "/api"
+    type: annotation
+    resource: "../src/Controller/Api/"
+
+
