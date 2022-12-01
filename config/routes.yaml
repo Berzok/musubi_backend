@@ -7,7 +7,7 @@ index:
     resource: "../src/Controller/"
 api:
     prefix: "/api"
-    type: annotation
+    type: attribute
     resource: "../src/Controller/Api/"
 
 

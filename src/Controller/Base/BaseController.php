@@ -15,18 +15,8 @@ use Symfony\Component\Routing\Annotation\Route;
 class BaseController extends AbstractController {
 
     protected ManagerRegistry $doctrine;
-    protected SerializerInterface $serializer;
-
-    protected string $entity = '';
 
     public function __construct(ManagerRegistry $doctrine) {
         $this->doctrine = $doctrine;
-        $serializer = SerializerBuilder::create()
-            ->setSerializationContextFactory(function () {
-                return SerializationContext::create()
-                    ->enableMaxDepthChecks();
-            })
-            ->build();
-        $this->serializer = $serializer;
     }
 }

@@ -4,6 +4,7 @@ namespace App\Controller\Base;
 
 use Doctrine\Persistence\ManagerRegistry;
 use JMS\Serializer\SerializationContext;
+use JMS\Serializer\SerializerBuilder;
 use JMS\Serializer\SerializerInterface;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -20,6 +21,21 @@ class ApiController extends BaseController {
     protected SerializerInterface $serializer;
 
     protected string $entity = '';
+
+    /**
+     * @param ManagerRegistry $doctrine
+     */
+    public function __construct(ManagerRegistry $doctrine) {
+        $serializer = SerializerBuilder::create()
+            ->setSerializationContextFactory(function () {
+                return SerializationContext::create()
+                    ->enableMaxDepthChecks();
+            })
+            ->build();
+        $this->serializer = $serializer;
+        parent::__construct($doctrine);
+    }
+
 
     /**
      * @return JsonResponse

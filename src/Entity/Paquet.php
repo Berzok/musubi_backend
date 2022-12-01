@@ -2,17 +2,18 @@
 
 namespace App\Entity;
 
-use App\Repository\ResourceRepository;
+use App\Repository\PaquetRepository;
+use DateTimeImmutable;
 use DateTimeInterface;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 
-#[ORM\Entity(repositoryClass: ResourceRepository::class)]
-class Resource {
+#[ORM\Entity(repositoryClass: PaquetRepository::class)]
+class Paquet {
 
     #[ORM\Id]
     #[ORM\GeneratedValue]
-    #[ORM\Column]
+    #[ORM\Column(name: 'id')]
     private ?int $id = null;
 
     #[ORM\ManyToOne(targetEntity: User::class)]
@@ -22,20 +23,24 @@ class Resource {
     #[ORM\Column(length: 255)]
     private ?string $name = null;
 
-    #[ORM\Column(length: 52)]
+    #[ORM\Column(length: 52, unique: true)]
     private ?string $code = null;
 
-    #[ORM\Column(length: 255)]
+    /**
+     * Is either the key in the bucket, or the filename if locally uploaded
+     * @var string|null
+     */
+    #[ORM\Column(type: 'string', length: 255)]
     private ?string $slug = null;
 
     #[ORM\Column]
-    private ?bool $restricted = null;
+    private bool $restricted = false;
 
-    #[ORM\Column(type: Types::DATETIME_MUTABLE)]
-    private ?DateTimeInterface $created = null;
+    #[ORM\Column(type: Types::DATETIME_IMMUTABLE)]
+    private ?DateTimeImmutable $created = null;
 
-    #[ORM\Column(type: Types::DATETIME_MUTABLE)]
-    private ?DateTimeInterface $expiration = null;
+    #[ORM\Column(type: Types::DATETIME_IMMUTABLE)]
+    private ?DateTimeImmutable $expiration = null;
 
 
     public function getId(): ?int {
@@ -69,20 +74,20 @@ class Resource {
         return $this;
     }
 
-    public function getCreated(): ?DateTimeInterface {
+    public function getCreated(): ?DateTimeImmutable {
         return $this->created;
     }
 
-    public function setCreated(DateTimeInterface $created): self {
+    public function setCreated(DateTimeImmutable $created): self {
         $this->created = $created;
         return $this;
     }
 
-    public function getExpiration(): ?DateTimeInterface {
+    public function getExpiration(): ?DateTimeImmutable {
         return $this->expiration;
     }
 
-    public function setExpiration(DateTimeInterface $expiration): self {
+    public function setExpiration(DateTimeImmutable $expiration): self {
         $this->expiration = $expiration;
         return $this;
     }
