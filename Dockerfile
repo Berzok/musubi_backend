@@ -45,21 +45,26 @@ RUN set -eux; \
 ###< recipes ###
 
 RUN mv "$PHP_INI_DIR/php.ini-production" "$PHP_INI_DIR/php.ini"
-COPY --link docker/conf.d/app.ini $PHP_INI_DIR/conf.d/
-COPY --link docker/conf.d/app.prod.ini $PHP_INI_DIR/conf.d/
+COPY --link docker/php/conf.d/app.ini $PHP_INI_DIR/conf.d/
+COPY --link docker/php/conf.d/app.prod.ini $PHP_INI_DIR/conf.d/
 
-COPY --link docker/php-fpm.d/zz-docker.conf /usr/local/etc/php-fpm.d/zz-docker.conf
+COPY --link docker/php/php-fpm.d/zz-docker.conf /usr/local/etc/php-fpm.d/zz-docker.conf
+COPY --link docker/php/php-fpm.d/php-fpm.conf /etc/php-fpm.d/php-fpm.conf
 RUN mkdir -p /var/run/php
 
-COPY --link docker/docker-healthcheck.sh /usr/local/bin/docker-healthcheck
+COPY --link docker/php/docker-healthcheck.sh /usr/local/bin/docker-healthcheck
 RUN chmod +x /usr/local/bin/docker-healthcheck
 
 HEALTHCHECK --interval=10s --timeout=3s --retries=3 CMD ["docker-healthcheck"]
 
-COPY --link docker/docker-entrypoint.sh /usr/local/bin/docker-entrypoint
-RUN chmod +x /usr/local/bin/docker-entrypoint
+#COPY --link docker/php/docker-entrypoint.sh /usr/local/bin/docker-entrypoint
+#RUN chmod +x /usr/local/bin/docker-entrypoint
 
-ENTRYPOINT ["docker-entrypoint"]
+COPY --link docker/nginx/conf.d/app.conf /etc/nginx/conf.d/default.conf
+
+#ENTRYPOINT ["docker-entrypoint"]
+# Expose port 9000 and start php-fpm server
+EXPOSE 9000
 CMD ["php-fpm"]
 
 # https://getcomposer.org/doc/03-cli.md#composer-allow-superuser
@@ -99,7 +104,7 @@ RUN rm $PHP_INI_DIR/conf.d/app.prod.ini; \
 	mv "$PHP_INI_DIR/php.ini" "$PHP_INI_DIR/php.ini-production"; \
 	mv "$PHP_INI_DIR/php.ini-development" "$PHP_INI_DIR/php.ini"
 
-COPY --link docker/conf.d/app.dev.ini $PHP_INI_DIR/conf.d/
+COPY --link docker/php/conf.d/app.dev.ini $PHP_INI_DIR/conf.d/
 
 RUN set -eux; \
 	install-php-extensions xdebug
@@ -110,3 +115,18 @@ RUN rm -f .env.local.php
 WORKDIR /srv/app
 
 COPY --from=app_php --link /srv/app/public public/
+
+# Add user for the application
+#RUN addgroup -g 1000 www
+#RUN adduser -u 1000 -s /bin/bash -g www www
+#
+## Copy existing application directory permissions
+#COPY --chown=www:www . /srv/app
+#
+## Change current user to www
+#USER www
+
+# Expose port 9000 and start php-fpm server
+EXPOSE 9000
+EXPOSE 80
+CMD ["php-fpm"]
