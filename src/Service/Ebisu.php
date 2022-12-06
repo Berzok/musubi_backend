@@ -22,6 +22,8 @@ class Ebisu {
         $this->name = $name;
         $this->key = $key;
         $this->secret = $secret;
+
+        $this->connect();
     }
 
     private function connect(): void {

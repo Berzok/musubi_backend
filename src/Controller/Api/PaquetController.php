@@ -14,6 +14,7 @@ use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\ResponseHeaderBag;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Uid\Ulid;
 
@@ -62,28 +63,45 @@ class PaquetController extends ApiController {
     /**
      * @param string $code
      * @param Ebisu $ebisu
-     * @return BinaryFileResponse
+     * @return StreamedResponse|BinaryFileResponse
      */
     #[Route('/retrieve/{code}', name: 'retrieve', methods: ['GET'])]
-    public function retrieve(string $code, Ebisu $ebisu): BinaryFileResponse {
+    public function retrieve(string $code, Ebisu $ebisu): StreamedResponse|BinaryFileResponse {
         $repository = $this->doctrine->getRepository(Paquet::class);
         $paquet = $repository->findOneByCode($code);
         $key = $paquet->getSlug();
+        $uri = '';
 
         if ($this->getParameter('use_space')) {
             $uri = $ebisu->createUrl($key);
-            return new BinaryFileResponse($uri);
+            $response = new StreamedResponse(function () use ($uri) {
+                $c = curl_init($uri);
+                curl_exec($c);
+                curl_close($c);
+            });
+            // set headers to force file download
+            $response->headers->set('Content-Type', 'application/force-download');
+            $response->headers->set(
+                'Content-Disposition',
+                $response->headers->makeDisposition(
+                    ResponseHeaderBag::DISPOSITION_ATTACHMENT,
+                    'musubi_' . $paquet->getName()
+                )
+            );
 
         } else {
-            $localFilepath = Path::join($this->getParameter('upload_directory'), $paquet->getSlug());
-            $response = new BinaryFileResponse($localFilepath);
+            $uri = Path::join($this->getParameter('upload_directory'), $paquet->getSlug());
+            $response = new BinaryFileResponse($uri);
             $response->setContentDisposition(
                 ResponseHeaderBag::DISPOSITION_ATTACHMENT,
                 'musubi_' . $paquet->getName()
             );
-            return $response;
         }
 
+
+        return $response;
+
+        /*
         try {
             $this->client->deleteObject([
                 'Bucket' => $this->getParameter('app.bucket.name'),
@@ -95,8 +113,6 @@ class PaquetController extends ApiController {
         } catch (Exception $e) {
             var_dump($e);
         }
-
-        $json = $serializer->serialize('ok', 'json');
-        return new Response($json, Response::HTTP_OK);
+        */
     }
 }
